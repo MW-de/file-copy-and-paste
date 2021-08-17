@@ -15,8 +15,8 @@ Download **FileCopyAndPaste.html** and open it in a web browser.
 Use the **Copy area** to open a file and copy the contents as a JSON-embedded base64 string. Format is:
 ```json
 {
-    "data": <base64 data url>,
-    "filename": <filename>
+    "data": "<base64 data url>",
+    "filename": "<filename>"
 }
 ```
 
