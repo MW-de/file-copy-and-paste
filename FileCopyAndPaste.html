@@ -1,0 +1,128 @@
+<html>
+<head><title>File Copy And Paste</title>
+<style>
+    body {
+        padding-top: 1em;
+        font-family: 'Trebuchet MS', sans-serif;
+    }
+    h1 {
+        font-size: 4em;
+        font-weight: bold;
+        text-align: center;
+        margin: .6em auto;
+    }
+    div.field {
+        margin: 1em auto 6em;
+        width: 400px;
+    }
+    div.field:last-child {
+        margin-bottom: 1em;
+    }
+    textarea, input {
+        width: 400px;
+        margin: .4em 0;
+        resize: none;
+        overflow: hidden;
+    }
+
+    div.whattodo {
+        margin-top: 2em;
+        text-align: center;
+    }
+</style>
+<script>
+    var cancopytoclipboard = false;
+    
+    window.addEventListener("load", init);
+
+    async function init () {
+        // Check whether the browser allows copying to clipboard programmatically
+        navigator.permissions.query({ name: 'clipboard-write' })
+            .then(() => { cancopytoclipboard = true; })
+            .catch(() => {});
+            
+        document.getElementById('inputfile').addEventListener('change', oninputfilechange);
+        document.getElementById('pastefield').addEventListener('change', onpastefieldchange);
+    }
+
+    /// Reads and copies the input file
+    async function oninputfilechange() {
+        let fileobj = document.getElementById('inputfile').files[0];
+        
+        console.log("Reading " + fileobj.name + "...");
+        
+        let copiedjson = {
+            data: await readFileAsDataURLAsync(fileobj),
+            filename: fileobj.name
+        };
+        
+        // Copy to clipboard if possible
+        if (cancopytoclipboard) {
+
+            navigator.clipboard.writeText(JSON.stringify(copiedjson))
+
+            .then(
+               () => { document.getElementById('copyresult').textContent = "Copied to clipboard."; })
+            
+            .catch(
+                () => { document.getElementById('copyresult').textContent = "Please copy from text area (Ctrl+A, Ctrl+C)."; });
+        }
+        // ... or display a prompt to the user
+        else {
+            document.getElementById('copyresult').textContent = "Please copy from text area (Ctrl+A, Ctrl+C).";
+        }
+        
+        // Write data into the copyfield textarea
+        document.getElementById('copyfield').value = JSON.stringify(copiedjson);
+    }
+    
+    /// Parses and downloads the pasted string
+    async function onpastefieldchange() {
+        try {
+            var copiedjson = JSON.parse(document.getElementById('pastefield').value);
+        }
+        catch (e) { return; }
+        
+        downloadFile(copiedjson.data, copiedjson.filename);
+    }
+    
+    /**
+    * Creates a FileReader object and reads contents from file as an ArrayBuffer. Executes async and returns a Promise.
+    * @param file File object to read
+    * @returns {Promise<ArrayBuffer>}
+    */
+    async function readFileAsDataURLAsync(file) {
+        return new Promise((resolve, reject) => {
+            var fr = new FileReader();
+            
+            fr.onabort = fr.onerror = ((e) => { reject(new Error('FileReader: '+e.target.error)); });
+            fr.onload = ((e) => { resolve(e.target.result); });
+            
+            fr.readAsDataURL(file);
+        });
+    }
+    
+    function downloadFile(url, fileName) {
+        var a = document.createElement('a');
+        a.download = fileName;
+        a.href = url;
+        a.click();
+    }
+</script>
+</head>
+
+<body>
+    <h1>Copy</h1>
+    <div class="field">
+        <input type="file" name="inputfile" id="inputfile" />
+        <textarea name="copyfield" id="copyfield" rows="5"></textarea>
+        <div class="whattodo" id="copyresult">&nbsp;</div>
+    </div>
+    
+    <h1>Paste</h1>
+    <div class="field">
+        <textarea name="pastefield" id="pastefield" rows="5"></textarea>
+        <div class="whattodo">Please paste into text area and click outside.</div>
+    </div>
+</body>
+</html>
